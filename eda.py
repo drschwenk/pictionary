@@ -37,6 +37,8 @@ cached_sw = stopwords.words("english") + list(string.punctuation)
 
 colors = list(matplotlib.colors.cnames.keys())
 
+color_set = set(colors)
+
 core_parser = CoreNLPParser(url='http://localhost:9000')
 
 gram_checker = language_check.LanguageTool('en-US')
@@ -51,6 +53,9 @@ free_words_less = ['a',
  'are',
  'an']
 
+nuisance_phrases = ['a picture of ', 'this is ', 'there is ', 'shown ', 'an image of ', 'view of a ', 'close up of ']
+
+verb_tags = set(['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'])
 
 
 def least_common_word(sent):
@@ -94,16 +99,7 @@ def least_common_word(sent, freq_thresh=4.7):
     return lowest_freq > freq_thresh
 
 
-def form_strings(tagged_sentence):
-    words = [w[0] for w in tagged_sentence]
-    include_word = filter_pos_tags(tagged_sentence)
-    return f"{' '.join(words)} # {' '.join(include_word)}"
 
-
-def form_strings_w_pos(tagged_sentence):
-    words = [w[0] for w in tagged_sentence]
-    include_word = [w[1] for w in tagged_sentence]
-    return f"{' '.join(words)} # {' '.join(include_word)}"
 
 
 def remove_blacklisted(sentences):
@@ -173,13 +169,18 @@ def filter_pos_tags(tagged_sent):
 def least_common_word(sent, freq_thresh=4.7):
     wlfs = [zipf_frequency(w, 'en') for w in sent.split()]
     lowest_freq = min(wlfs)
-    mpl.use("Agg")  # Must come after importing mpl, but before importing plt
     return lowest_freq > freq_thresh
 
 
 def form_strings(tagged_sentence):
     words = [w[0] for w in tagged_sentence]
     include_word = filter_pos_tags(tagged_sentence)
+    return f"{' '.join(words)} # {' '.join(include_word)}"
+
+
+def form_strings_w_pos(tagged_sentence):
+    words = [w[0] for w in tagged_sentence]
+    include_word = [w[1] for w in tagged_sentence]
     return f"{' '.join(words)} # {' '.join(include_word)}"
 
 
@@ -194,7 +195,6 @@ def get_word_sisters(word):
     sister_words_syn = []
     sister_words = []
     for syn in wordnet.synsets(word):
-        print(syn)
         if syn.pos() != 'n':
             continue
         for hyper in syn.hypernyms():
